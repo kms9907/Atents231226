@@ -34,6 +34,16 @@ namespace StarterAssets
 		/// </summary>
 		public Action<bool> onZoom;
 
+		/// <summary>
+		/// 플레이어
+		/// </summary>
+		Player player;
+
+        private void Awake()
+        {
+            player = GetComponent<Player>();
+        }
+
         private void Start()
         {
 			followCamera = GameManager.Instance.FollowCamera;
@@ -106,18 +116,29 @@ namespace StarterAssets
                     yield return null;
                 }
 				followCamera.m_Lens.FieldOfView = normalFOV;
-            }            
-
+            }   
         }
 
-        public void OnFire(InputAction.CallbackContext context)
+		public void OnFire(InputAction.CallbackContext context)
 		{
-
+			//Debug.Log("Fire");
+			if (context.performed)
+			{
+                player.GunFire(true);
+            }
+			else if (context.canceled)
+			{
+				player.GunFire(false);
+            }
+			//player.GunFire(!context.canceled);	// started와 performed로 두번 실행된다.
 		}
 
         public void OnReload(InputAction.CallbackContext context)
         {
-
+			if(context.performed)
+			{
+				player.RevolverReload();
+			}
         }
 
 
