@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -11,6 +12,8 @@ public class EnemySpawner : MonoBehaviour
     int mazeHeight;
     Player player;
     Enemy[] enemies;
+
+    public Action onSpawnCompleted;
 
     private void Awake()
     {
@@ -26,9 +29,12 @@ public class EnemySpawner : MonoBehaviour
         player = GameManager.Instance.Player;
 
         GameManager.Instance.onGameStart += EnemyAll_Play;
-        GameManager.Instance.onGameClear += EnemyAll_Stop;
+        GameManager.Instance.onGameEnd += (_) => EnemyAll_Stop();
     }
 
+    /// <summary>
+    /// 적을 모두 스폰하는 함수(미로 생성이 완료된 후에 호출됨)
+    /// </summary>
     public void EnemyAll_Spawn()
     {
         // 적 생성
@@ -43,23 +49,31 @@ public class EnemySpawner : MonoBehaviour
                 GameManager.Instance.IncreaseKillCount();
                 StartCoroutine(Respawn(target));
             };
-            enemy.Respawn(GetRandomSpawnPosition(true));
+            enemy.Respawn(GetRandomSpawnPosition(true), true);
         }
+
+        onSpawnCompleted?.Invoke();   //  스폰이 완료되면 알림
     }
 
+    /// <summary>
+    /// 모든 적을 움직이게 만들기
+    /// </summary>
     void EnemyAll_Play()
     {
         foreach (var enemy in enemies)
         {
-            enemy.Play();
+            enemy.Play();   // Wander상태로 변경
         }
     }
 
+    /// <summary>
+    /// 모든 적을 일시정지 시키기(이동, 공격)
+    /// </summary>
     void EnemyAll_Stop()
     {
         foreach (var enemy in enemies)
         {
-            enemy.Stop();
+            enemy.Stop();   // 대기상태로 변경
         }
     }
 
@@ -85,10 +99,11 @@ public class EnemySpawner : MonoBehaviour
         int x;
         int y;
         int limit = 100;
+        float halfSize = Mathf.Min(mazeWidth, mazeHeight) * 0.5f;
         do
         {
             // 플레이어 위치에서  +-5 범위 안이 걸릴 때까지 랜덤돌리기
-            int index = Random.Range(0, mazeHeight * mazeWidth);    // 미로 밖은 선택되지 않게 하기
+            int index = UnityEngine.Random.Range(0, mazeHeight * mazeWidth);    // 미로 밖은 선택되지 않게 하기
             x = index / mazeWidth;
             y = index % mazeHeight;
             
@@ -96,7 +111,9 @@ public class EnemySpawner : MonoBehaviour
             if( limit < 1 ) // 최대 100번만 시도하기
                 break;
 
-        } while (!(x < playerPostion.x + 5 && x > playerPostion.x - 5 && y < playerPostion.y + 5 && y > playerPostion.y - 5));
+        } while (!(
+        x < playerPostion.x + halfSize && x > playerPostion.x - halfSize 
+        && y < playerPostion.y + halfSize && y > playerPostion.y - halfSize));
 
         Vector3 world = MazeVisualizer.GridToWorld(x, y);
 
