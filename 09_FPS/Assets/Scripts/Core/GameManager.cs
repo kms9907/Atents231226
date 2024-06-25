@@ -67,9 +67,15 @@ public class GameManager : Singleton<GameManager>
     public Action<bool> onGameEnd;
 
     protected override void OnInitialize()
-    {     
-        player = FindAnyObjectByType<Player>();  
+    {
+        player = FindAnyObjectByType<Player>();
         player.onDie += GameOver;
+
+        MinimapCamera minimapCamera = FindAnyObjectByType<MinimapCamera>();
+        minimapCamera.Initialize(player);
+
+        LoadingScreen loadingScreen = FindAnyObjectByType<LoadingScreen>();
+        loadingScreen.Initialize();
 
         GameObject obj = GameObject.FindWithTag("FollowCamera");
         if (obj != null)
@@ -77,7 +83,12 @@ public class GameManager : Singleton<GameManager>
             followCamera = obj.GetComponent<CinemachineVirtualCamera>();
         }
 
-        spawner = FindAnyObjectByType<EnemySpawner>();        
+        spawner = FindAnyObjectByType<EnemySpawner>();
+        spawner.onSpawnCompleted += () =>
+        {
+            loadingScreen.OnLoadginProgress(1.0f);
+            player.Spawn(); // 적 스폰이 끝나면 플레이어 스폰
+        };
 
         mazeGenerator = FindAnyObjectByType<MazeGenerator>();
         if(mazeGenerator != null)
@@ -85,6 +96,8 @@ public class GameManager : Singleton<GameManager>
             mazeGenerator.Generate(MazeWidth, MazeHeight);
             mazeGenerator.onMazeGenerated += () =>
             {
+                loadingScreen.OnLoadginProgress(0.7f);
+
                 // 적 스폰
                 spawner?.EnemyAll_Spawn();
 
@@ -96,6 +109,10 @@ public class GameManager : Singleton<GameManager>
         ResultPanel resultPanel = FindAnyObjectByType<ResultPanel>();
         resultPanel.gameObject.SetActive(false);
 
+        // 델리게이트 초기화(삭제되지 않는 게임 오브젝트이기 때문에)
+        onGameStart = null;
+        onGameEnd = null; 
+
         onGameEnd += (isClear) =>
         {
             //Time.timeSinceLevelLoad : 씬이 로딩되고 지난 시간
@@ -105,6 +122,7 @@ public class GameManager : Singleton<GameManager>
         };
 
         Cursor.lockState = CursorLockMode.Locked;   // 커서 안보이게 만들기
+        //Debug.Log("OnInitialize - end");
     }
 
     public void IncreaseKillCount()

@@ -65,7 +65,7 @@ public class Player : MonoBehaviour
             }
             hp = Mathf.Clamp(hp, 0, MaxHP); // HP 최대 최소 안벗어나게 만들기
 
-            Debug.Log($"HP : {hp}");
+            //Debug.Log($"HP : {hp}");
 
             onHPChange?.Invoke(hp);         // HP 변화 알리기
         }
@@ -133,8 +133,7 @@ public class Player : MonoBehaviour
         HP = MaxHP;
 
         GameManager.Instance.onGameEnd += (_) => InputDisable();           // 게임이 클리어되면 입력 막기
-
-        Spawn();
+        
     }
 
     /// <summary>
